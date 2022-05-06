@@ -75,6 +75,7 @@ project(httplib VERSION ${_httplib_version} LANGUAGES CXX)
 # This is used in the installed Cmake config file.
 set(_HTTPLIB_OPENSSL_MIN_VER "1.1.1")
 
+option(HTTPLIB_COMPILE_EXAMPLE "Compile httplib example." OFF)
 # Allow for a build to require OpenSSL to pass, instead of just being optional
 option(HTTPLIB_REQUIRE_OPENSSL "Requires OpenSSL to be found & linked, or fails build." OFF)
 option(HTTPLIB_REQUIRE_ZLIB "Requires ZLIB to be found & linked, or fails build." OFF)
@@ -101,11 +102,26 @@ endif()
 
 # Threads needed for <thread> on some systems, and for <pthread.h> on Linux
 find_package(Threads REQUIRED)
-# Since Cmake v3.11, Crypto & SSL became optional when not specified as COMPONENTS.
-if(HTTPLIB_REQUIRE_OPENSSL)
-	find_package(OpenSSL ${_HTTPLIB_OPENSSL_MIN_VER} COMPONENTS Crypto SSL REQUIRED)
-elseif(HTTPLIB_USE_OPENSSL_IF_AVAILABLE)
-	find_package(OpenSSL ${_HTTPLIB_OPENSSL_MIN_VER} COMPONENTS Crypto SSL QUIET)
+## Since Cmake v3.11, Crypto & SSL became optional when not specified as COMPONENTS.
+#if(HTTPLIB_REQUIRE_OPENSSL)
+#	find_package(OpenSSL ${_HTTPLIB_OPENSSL_MIN_VER} COMPONENTS Crypto SSL REQUIRED)
+#elseif(HTTPLIB_USE_OPENSSL_IF_AVAILABLE)
+#	find_package(OpenSSL ${_HTTPLIB_OPENSSL_MIN_VER} COMPONENTS Crypto SSL QUIET)
+#endif()
+set(OPENSSL_CRYPTO_LIBRARY ${CMAKE_BINARY_DIR}/contrib/openssl-cmake/crypto/libcrypto.a)
+set(OPENSSL_SSL_LIBRARY ${CMAKE_BINARY_DIR}/contrib/openssl-cmake/ssl/libssl.a)
+#message("OPENSSL_CRYPTO_LIBRARY = " ${OPENSSL_CRYPTO_LIBRARY})
+#message("OPENSSL_SSL_LIBRARY = " ${OPENSSL_SSL_LIBRARY})
+add_library(OpenSSL::Crypto ALIAS crypto)
+add_library(OpenSSL::SSL ALIAS ssl)
+set(OPENSSL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/contrib/openssl-cmake/include ${CMAKE_BINARY_DIR}/contrib/openssl-cmake/include)
+set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+#message("OPENSSL_INCLUDE_DIR = " ${OPENSSL_INCLUDE_DIR})
+#message("OPENSSL_LIBRARIES = " ${OPENSSL_LIBRARIES})
+set(OPENSSL_FOUND TRUE)
+
+if (HTTPLIB_COMPILE_EXAMPLE)
+	add_subdirectory(example)
 endif()
 # Just setting this variable here for people building in-tree
 if(OPENSSL_FOUND)
